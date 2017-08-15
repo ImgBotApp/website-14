@@ -27,37 +27,183 @@ If you want to dynamically change the UI based on network data or user interacti
 
 The important thing to note here is at the core both Stateless and Stateful widgets behave the same. They rebuild every frame, the difference is the StatefulWidget has a State object which stores state data across frames and restores it.
 
-Let's take a look at how you would use a StatelessWidget 
+If you are in doubt, then always remember this rule: If a widget changes—the user interacts with it, for example—it’s stateful.
 
-[code]
+Let's take a look at how you would use a StatelessWidget. A common StatelessWidget is a Text widget. If you look at the implemtnation of the Text Widget you'll find it subclasses a StatelessWidget
 
-And how about a StatefulWidget with State
+<!-- skip -->
+{% prettify dart %}
+new Text(
+  'I like Flutter!',
+  style: new TextStyle(fontWeight: FontWeight.bold),
+);
+{% endprettify %}
 
-[code]
+As you can see, the Text Widget has no state information associated with it, it renders what is passed in it's constructors and nothing more. 
+
+However, what if you want to make "I Like Flutter" change dynamically, for example from clicking a FloatingActionButton?
+
+This can be acheived by wrapping the Text widget in a StatefulWidget and updating it when the button is clicked.
+
+For example:
+
+<!-- skip -->
+{% prettify dart %}
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(new SampleApp());
+}
+
+class SampleApp extends StatelessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: 'Sample App',
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: new SampleAppPage(),
+    );
+  }
+}
+
+class SampleAppPage extends StatefulWidget {
+  SampleAppPage({Key key}) : super(key: key);
+
+  @override
+  _SampleAppPageState createState() => new _SampleAppPageState();
+}
+
+class _SampleAppPageState extends State<SampleAppPage> {
+  // Default placeholder text
+  String textToShow = "I Like Flutter";
+  void _updateText() {
+    setState(() {
+      // update the text
+      textToShow = "Flutter is Awesome!";
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text("Sample App"),
+      ),
+      body: new Center(child: new Text(textToShow)),
+      floatingActionButton: new FloatingActionButton(
+        onPressed: _updateText,
+        tooltip: 'Update Text',
+        child: new Icon(Icons.update),
+      ),
+    );
+  }
+}
+{% endprettify %}
 
 
 
 **How do I layout my Widgets? Where is my XML layout file?**
 
-In Android, you write layouts via XML, in Flutter you write your layouts with a widget tree. 
+In Android, you write layouts via XML, however in Flutter you write your layouts with a widget tree. 
 
 Here is an example of how you would display a simple Widget on the screen and add some padding to it.
 
-In Android, you would typically do 
+<!-- skip -->
+{% prettify dart %}
+@override
+Widget build(BuildContext context) {
+  return new Scaffold(
+    appBar: new AppBar(
+      title: new Text("Sample App"),
+    ),
+    body: new Center(
+      child: new MaterialButton(
+        onPressed: () {},
+        child: new Text('Hello'),
+        padding: new EdgeInsets.only(left: 10.0, right: 10.0),
+      ),
+    ),
+  );
+}
+{% endprettify %}
 
-[code]
 
-in Flutter you would do
-
-[code]
 
 **How do I add or remove a component from my layout?**
 
 In Android, you would call addChild or removeChild from a parent to dynamically add or remove views from a parent. In Flutter, because widgets are immutable there is no addChild, instead, you can simply pass in a function that returns a widget to the parent and control that child's creation via a boolean.
 
-For example:
+For example here is how you can toggle between two widgets when you click on a FloatingActionButton
 
-[code] 
+<!-- skip -->
+{% prettify dart %}
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(new SampleApp());
+}
+
+class SampleApp extends StatelessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: 'Sample App',
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: new SampleAppPage(),
+    );
+  }
+}
+
+class SampleAppPage extends StatefulWidget {
+  SampleAppPage({Key key}) : super(key: key);
+
+  @override
+  _SampleAppPageState createState() => new _SampleAppPageState();
+}
+
+class _SampleAppPageState extends State<SampleAppPage> {
+  // Default value for toggle
+  bool toggle = true;
+  void _toggle() {
+    setState(() {
+      toggle = !toggle;
+    });
+  }
+
+  _getToggleChild() {
+    if (toggle) {
+      return new Text('Toggle One');
+    } else {
+      return new MaterialButton(onPressed: () {}, child: new Text('Toggle Two'));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text("Sample App"),
+      ),
+      body: new Center(
+        child: _getToggleChild(),
+      ),
+      floatingActionButton: new FloatingActionButton(
+        onPressed: _toggle,
+        tooltip: 'Update Text',
+        child: new Icon(Icons.update),
+      ),
+    );
+  }
+}
+{% endprettify %}
+
+
 
 **In Android, I can Animate a view by View.animate(), how can I do that to a Widget?**
 In Flutter, animating widgets can be done easily via the animation library. See https://flutter.io/widgets/animation/
@@ -66,6 +212,8 @@ Let's take a look at how to write a FadeTransition
 
 [code]
 
+
+
 **How do I build custom Widgets?**
 
 Building custom widgets in Flutter is as simple as extending a Widget and adding your custom logic. This is like Android where you would extend a View and override the methods to customize it.
@@ -73,6 +221,8 @@ Building custom widgets in Flutter is as simple as extending a Widget and adding
 Let's take a look at how to build a custom button
 
 [code]
+
+
 
 # Intents
 
@@ -184,15 +334,11 @@ Once you have the result you can tell Flutter to update its state by calling set
 
 Which will update your UI with the result from your network call.
 
-
-
 **How do I show progress indicator on android when there is a task that is running?**
 
 Before you call your long running task, you can show a Indicator to let the user know there is processing happening. This can be done by rendering a Dialog widget. You can show the Dialog programmatically by controlling it's rendering through a boolean and telling Flutter to update it's state just before your long running task.
 
 [code]
-
-
 
 # Project Structure & Resources
 
@@ -232,8 +378,6 @@ While there are Gradle files under the Android folder, you would only use these 
 A good place to find great packages for flutter is pub.dartlang.org
 
 [code]
-
-
 
 # Activities and Fragments
 
@@ -287,11 +431,11 @@ Typically you would want to add event listeners to your widgets, such as a butto
 
 1. If the Widget has support for event detection you can just pass in a function to it and handle it. For example, the MaterialButton has an onPressed parameter
 
-   ​	[code]
+   ​  [code]
 
 2. If the Widget does not have support for event detection, you can wrap up the widget in a GestureDetector and pass in a function to the onTap parameter.
 
-   ​	[code]
+   ​  [code]
 
 **How do I handle other gestures on widgets?**
 
@@ -337,27 +481,264 @@ Though the differences are great, the end result is the same. In an Android List
 
 In Flutter, due to Flutters immutable widget pattern, you simply pass in a List of Widgets to your ListView and Flutter will take care of making sure they are scrolling fast and smooth.
 
-[Example Code]
+<!-- skip -->
+{% prettify dart %}
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(new SampleApp());
+}
+
+class SampleApp extends StatelessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: 'Sample App',
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: new SampleAppPage(),
+    );
+  }
+}
+
+class SampleAppPage extends StatefulWidget {
+  SampleAppPage({Key key}) : super(key: key);
+
+  @override
+  _SampleAppPageState createState() => new _SampleAppPageState();
+}
+
+class _SampleAppPageState extends State<SampleAppPage> {
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text("Sample App"),
+      ),
+      body: new ListView(children: _getListData()),
+    );
+  }
+
+  _getListData() {
+    List<Widget> widgets = new List();
+    for (int i = 0; i < 100; i++) {
+      widgets.add(new Padding(padding: new EdgeInsets.all(10.0), child: new Text("Row $i")));
+    }
+    return widgets;
+  }
+}
+{% endprettify %}
 
 **How do I know which list item is clicked on?**
 
 Unlike Android where a ListView offers an onItemClickListener, Flutter makes it a lot easier by letting you just use the touch handling that the widgets you passed in have.
 
-[code]
+<!-- skip -->
+{% prettify dart %}
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(new SampleApp());
+}
+
+class SampleApp extends StatelessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: 'Sample App',
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: new SampleAppPage(),
+    );
+  }
+}
+
+class SampleAppPage extends StatefulWidget {
+  SampleAppPage({Key key}) : super(key: key);
+
+  @override
+  _SampleAppPageState createState() => new _SampleAppPageState();
+}
+
+class _SampleAppPageState extends State<SampleAppPage> {
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text("Sample App"),
+      ),
+      body: new ListView(children: _getListData()),
+    );
+  }
+
+  _getListData() {
+    List<Widget> widgets = new List();
+    for (int i = 0; i < 100; i++) {
+      widgets.add(new GestureDetector(
+        child: new Padding(padding: new EdgeInsets.all(10.0), child: new Text("Row $i")),
+        onTap: () {
+          print('row tapped');
+        },
+      ));
+    }
+    return widgets;
+  }
+}
+{% endprettify %}
 
 **How do I update ListView's dynamically?**
 
-This confuses a lot of people when coming from Android development. On Android, you would update the adapter and call notifyDataSetChanged. In Flutter if you were to update the list of widgets inside a setState(), you would quickly see that your data did not change visually. This is because when setState is called, the rendering engine will go through all the widgets to see if they have changed, when it gets to your ListView it will do a `==operator` and see that the two ListViews are the same and nothing has changed, hence no update to the data.
+This confuses a lot of people when coming from Android. On Android, you would update the adapter and call notifyDataSetChanged. In Flutter if you were to update the list of widgets inside a setState(), you would quickly see that your data did not change visually. 
 
-The quick and dirty way around this is to assign your list variable a new List() inside of setState, copy over all the old data to the new list.
+This is because when setState is called, the Flutter rendering engine will go through all the widgets to see if they have changed. When it gets to your ListView it will do a `==operator` and see that the two ListViews are the same and nothing has changed, hence no update to the data.
 
-[code]
+The quick and dirty way around this is to assign your list variable a new List() inside of setState, copy over all the old data to the new list. This is inefficient a simple dirty way to acheive an update. 
 
-This might be the best solution if you have simple updates, but when you are building complex applications, this can be tedious and memory intensive.
+<!-- skip -->
+{% prettify dart %}
+import 'package:flutter/material.dart';
 
-In that scenario, the best way is to use a ListView.Builder, this will let you dynamically add data to your List and the ListView will update it.
+void main() {
+  runApp(new SampleApp());
+}
 
-[code]
+class SampleApp extends StatelessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: 'Sample App',
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: new SampleAppPage(),
+    );
+  }
+}
+
+class SampleAppPage extends StatefulWidget {
+  SampleAppPage({Key key}) : super(key: key);
+
+  @override
+  _SampleAppPageState createState() => new _SampleAppPageState();
+}
+
+class _SampleAppPageState extends State<SampleAppPage> {
+  List widgets = new List();
+
+  @override
+  void initState() {
+    super.initState();
+    for (int i = 0; i < 100; i++) {
+      widgets.add(getRow(i));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text("Sample App"),
+      ),
+      body: new ListView(children: widgets),
+    );
+  }
+
+  Widget getRow(int i) {
+    return new GestureDetector(
+      child: new Padding(padding: new EdgeInsets.all(10.0), child: new Text("Row $i")),
+      onTap: () {
+        setState(() {
+          widgets = new List.from(widgets);
+          widgets.add(getRow(widgets.length + 1));
+          print('row $i');
+        });
+      },
+    );
+  }
+}
+{% endprettify %}
+
+However the recommended, more efficent and effective way is to use a ListView.Builder
+
+<!-- skip -->
+{% prettify dart %}
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(new SampleApp());
+}
+
+class SampleApp extends StatelessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: 'Sample App',
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: new SampleAppPage(),
+    );
+  }
+}
+
+class SampleAppPage extends StatefulWidget {
+  SampleAppPage({Key key}) : super(key: key);
+
+  @override
+  _SampleAppPageState createState() => new _SampleAppPageState();
+}
+
+class _SampleAppPageState extends State<SampleAppPage> {
+  List widgets = new List();
+
+  @override
+  void initState() {
+    super.initState();
+    for (int i = 0; i < 100; i++) {
+      widgets.add(getRow(i));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+        appBar: new AppBar(
+          title: new Text("Sample App"),
+        ),
+        body: new ListView.builder(
+            itemCount: widgets.length,
+            itemBuilder: (BuildContext context, int position) {
+              return getRow(position);
+            }));
+  }
+
+  Widget getRow(int i) {
+    return new GestureDetector(
+      child: new Padding(padding: new EdgeInsets.all(10.0), child: new Text("Row $i")),
+      onTap: () {
+        setState(() {
+          widgets.add(getRow(widgets.length + 1));
+          print('row $i');
+        });
+      },
+    );
+  }
+}
+{% endprettify %}
+
+Instead of creating a "new ListView" we create a new ListView.builder which takes two key paramters, the initial length of the list and an Itembuilder function.
+
+The ItemBuilder function is a lot like the getView function in an Android adapter, it takes in a position and you return the row you want rendered for that position.
+
+Lastly, but most important, if you notice the onTap function, we don't recreate the List anymore and instead just .add to it.
+
+
 
 # Working with Text
 
@@ -367,11 +748,33 @@ Customizing the Font of a Text widget is simple in Flutter, first you need to ta
 
 Next in your pubspec.yaml file you would declare the fonts
 
-[code]
+{% prettify yaml %}
+fonts:
+   - family: MyCustomFont
+     fonts:
+       - asset: fonts/MyCustomFont.ttf
+       - style: italic
+{% endprettify %}
 
 and lasty you would assign the font to your Text widget
 
-[code]
+<!-- skip -->
+{% prettify dart %}
+@override
+Widget build(BuildContext context) {
+  return new Scaffold(
+    appBar: new AppBar(
+      title: new Text("Sample App"),
+    ),
+    body: new Center(
+      child: new Text(
+        'This is a custom font text',
+        style: new TextStyle(fontFamily: 'MyCustomFont'),
+      ),
+    ),
+  );
+}
+{% endprettify %}
 
 **How do I style my Text widgets?**
 
@@ -400,7 +803,14 @@ wordSpacing
 
 In Flutter you can easily show a "hint" or a placeholder text for your input by adding an InputDecoration object to the decoration constructor parameter for the Text Widget
 
-[code]
+<!-- skip -->
+{% prettify dart %}
+body: new Center(
+  child: new TextField(
+    decoration: new InputDecoration(hintText: "This is a hint"),
+  )
+)
+{% endprettify %}
 
 **How do I show validation errors?**
 
@@ -408,23 +818,91 @@ Just like how you would with a "hint", you can pass in a InputDecoration object 
 
 However, you would not want to start off with showing an error and typically would want to show it when the user has entered some invalid data. This can be done by updating the state and passing in a new InputDecoration object.
 
-[code]
+<!-- skip -->
+{% prettify dart %}
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(new SampleApp());
+}
+
+class SampleApp extends StatelessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: 'Sample App',
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: new SampleAppPage(),
+    );
+  }
+}
+
+class SampleAppPage extends StatefulWidget {
+  SampleAppPage({Key key}) : super(key: key);
+
+  @override
+  _SampleAppPageState createState() => new _SampleAppPageState();
+}
+
+class _SampleAppPageState extends State<SampleAppPage> {
+  String _errorText;
+
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text("Sample App"),
+      ),
+      body: new Center(
+        child: new TextField(
+          onSubmitted: (String text) {
+            setState(() {
+              if (!isEmail(text)) {
+                _errorText = 'Error: This is not an email';
+              } else {
+                _errorText = null;
+              }
+            });
+          },
+          decoration: new InputDecoration(hintText: "This is a hint", errorText: _getErrorText()),
+        ),
+      ),
+    );
+  }
+
+  _getErrorText() {
+    return _errorText;
+  }
+
+  bool isEmail(String em) {
+    String p =
+        r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
+
+    RegExp regExp = new RegExp(p);
+
+    return regExp.hasMatch(em);
+  }
+}
+{% endprettify %}
 
 
 
 # Flutter Plugins
 
-How do I access the GPS sensor?
+**How do I access the GPS sensor?**
 
-How do I access the Camera?
+**How do I access the Camera?**
 
-How do I log in with Facebook
+**How do I log in with Facebook**
 
-How do I build my own custom native integrations?
+**How do I build my own custom native integrations?**
 
 # Themes
 
-How do I theme my app?
+**How do I theme my app?**
 
 Flutter out of the box comes with a precise implementation of Material Design, which takes care of a lot of styling and theming needs that you would typically do.
 
@@ -433,10 +911,6 @@ To take full advantage of MaterialDesign in your app, you can declare a top leve
 [code]
 
 To customize the colors and styles of Material Design you can pass in a ThemeData object to the MaterialApp widget
-
-Where is my colors.xml
-
-Where is my styles.xml
 
 
 
